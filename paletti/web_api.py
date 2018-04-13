@@ -129,13 +129,15 @@ def choose_stream(media_data):
     return audio_file, video_file
 
 
-def fetch_plugins_from_repo(url, branch='master'):
+def fetch_plugins_from_repo(url, branch='master', force=False):
     """ Find and download all the plugins from the github repository.
 
     :param url: the .git url.
     :type url: str
     :param branch: the branch, default: "master"
     :type branch: str
+    :param force: if true, overwrite local files.
+    :type force: bool
     :return: None
     """
     url = url.replace('.git', '/')
@@ -150,10 +152,14 @@ def fetch_plugins_from_repo(url, branch='master'):
         filename = name.decode('utf-8') + '.py'
         file_url = urllib.parse.urljoin(plugin_path, filename)
         file_local = os.path.join(PLUGIN_FOLDER, filename)
-        r = http.request('GET', file_url)
-        with open(file_local, 'wb') as f:
-            f.write(r.data)
-        print(f'Wrote {file_local}')
+        file_exists = os.path.isfile(file_local)
+        if not file_exists or force:
+            r = http.request('GET', file_url)
+            with open(file_local, 'wb') as f:
+                f.write(r.data)
+            print(f'Wrote {file_local}')
+        else:
+            print(f'File {file_local} already exists, not overwriting.')
 
 
 def find_modules(directory):
