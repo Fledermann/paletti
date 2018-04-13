@@ -130,6 +130,14 @@ def choose_stream(media_data):
 
 
 def fetch_plugins_from_repo(url, branch='master'):
+    """ Find and download all the plugins from the github repository.
+
+    :param url: the .git url.
+    :type url: str
+    :param branch: the branch, default: "master"
+    :type branch: str
+    :return: None
+    """
     url = url.replace('.git', '/')
     host = 'raw.githubusercontent.com'
     parsed_url = urllib3.util.parse_url(url)
@@ -142,7 +150,10 @@ def fetch_plugins_from_repo(url, branch='master'):
         filename = name.decode('utf-8') + '.py'
         file_url = urllib.parse.urljoin(plugin_path, filename)
         file_local = os.path.join(PLUGIN_FOLDER, filename)
-        print(file_url, file_local)
+        r = http.request('GET', file_url)
+        with open(file_local, 'wb') as f:
+            f.write(r.data)
+        print(f'Wrote {file_local}')
 
 
 def find_modules(directory):

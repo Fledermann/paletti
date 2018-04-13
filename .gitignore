@@ -5,3 +5,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+
+# No plugins, except for the example file
+plugins/
+!plugins/_example_plugin.py
