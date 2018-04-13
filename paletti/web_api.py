@@ -3,12 +3,15 @@
 """ Provide an easy and intuitive way to fetch data from streaming
 websites. """
 
-import concurrent.futures
 import importlib
 import os
 import pkgutil
 import re
 import sys
+import urllib.parse
+import urllib3
+
+urllib3.disable_warnings()
 
 PATH = os.path.dirname(__file__)
 sys.path.append(PATH)
@@ -22,18 +25,19 @@ class SiteAPI:
     aka crawler.
     """
 
-    def __init__(self, plugin):
+    def __init__(self, plugin_name):
         """ Set the plugin.
 
-        :param plugin: the plugin to use.
-        :type plugin: str
+        :param plugin_name: the plugin to use.
+        :type plugin_name: str
         """
         self.cache = []
-        modules = load_plugins(PLUGIN_FOLDER)
+        plugins_all = find_modules(PLUGIN_FOLDER)
         try:
-            self.plugin = modules[plugin]
+            package_name = plugins_all[plugin_name]
         except KeyError:
-            raise ModuleNotFoundError(f'Plugin {plugin} not found.')
+            raise ModuleNotFoundError(f'Plugin {plugin_name} not found.')
+        self.plugin = importlib.import_module(package_name)
 
     def _get_from_cache(self, media_url):
         """ Return a cached item, if available. If nothing is found,
@@ -125,12 +129,29 @@ def choose_stream(media_data):
     return audio_file, video_file
 
 
-def load_plugins(directory):
-    """ Dynamically load all modules from a given folder.
+def fetch_plugins_from_repo(url, branch='master'):
+    url = url.replace('.git', '/')
+    host = 'raw.githubusercontent.com'
+    parsed_url = urllib3.util.parse_url(url)
+    branch_root = urllib.parse.urljoin(parsed_url.path, branch + '/')
+    plugin_path = urllib.parse.urljoin(branch_root, 'plugins/')
+    plugin_index = urllib.parse.urljoin(plugin_path, '_index.txt')
+    http = urllib3.HTTPSConnectionPool(host)
+    response = http.request('GET', plugin_index)
+    for name in response.data.split():
+        filename = name.decode('utf-8') + '.py'
+        file_url = urllib.parse.urljoin(plugin_path, filename)
+        file_local = os.path.join(PLUGIN_FOLDER, filename)
+        print(file_url, file_local)
+
+
+def find_modules(directory):
+    """ Find all modules from a given folder and return their names
+    and full paths. Ignore files starting with an underscore.
 
     :param directory: the plugin folder.
     :type directory: str
-    :returns: a dict of {name: module} pairs.
+    :returns: a dict of {name: package path} pairs.
     :rtype: dict
     """
     available_plugins = {}
@@ -138,6 +159,16 @@ def load_plugins(directory):
     for plugin in packages:
         folder = os.path.normpath(directory).split(os.sep)[-1]
         full_package_name = f'{folder}.{plugin.name}'
-        module = importlib.import_module(full_package_name)
-        available_plugins[plugin.name] = module
+        if not plugin.name.startswith('_'):
+            available_plugins[plugin.name] = full_package_name
     return available_plugins
+
+
+def show_plugins():
+    """ Return all available plugins.
+
+    :returns: the plugins.
+    :rtype: list
+    """
+    plugins = find_modules(PLUGIN_FOLDER)
+    return list(plugins.keys())
