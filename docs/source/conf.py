@@ -15,7 +15,7 @@
 import os
 import sys
 
-sys.path.append(os.path.abspath('../../paletti/'))
+sys.path.append(os.path.abspath('../../'))
 
 from paletti import __version__
 
