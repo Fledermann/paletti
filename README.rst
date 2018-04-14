@@ -3,7 +3,10 @@ paletti
 
 Not much to see yet, but there is some documentation_.
 
-Plugins are loaded dynamically fron the plugin/ folder, no additional changes
-to the code necessary.
+Paletti comes without plugins and pull request for plugins will be denied.
+However, since they are loaded dynamically from the plugins folder, it's
+just a matter of putting the files in there. Paletti can download
+plugins from a github repository, see the documentation/introduction for an
+example.
 
 .. _documentation: https://paletti.readthedocs.io

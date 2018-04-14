@@ -7,6 +7,7 @@ To use the api as a module:
 .. code-block:: python
 
    >>> import paletti
+   >>> paletti.fetch_plugins_from_repo('https://github.com/x/y.git')
    >>> my_api = paletti.SiteAPI('$streaming-site')
    >>> result = my_api.search('Python compiler')
    >>> result[0]
