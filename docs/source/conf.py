@@ -14,7 +14,10 @@
 #
 import os
 import sys
+
 sys.path.append(os.path.abspath('../../paletti/'))
+
+from paletti import __version__
 
 # -- Project information -----------------------------------------------------
 
@@ -23,9 +26,9 @@ copyright = '2018, Fledermann'
 author = 'Fledermann'
 
 # The short X.Y version
-version = '0.2'
+version = __version__
 # The full version, including alpha/beta/rc tags
-release = '0.2.0-alpha'
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------
