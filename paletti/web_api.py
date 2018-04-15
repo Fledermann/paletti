@@ -68,6 +68,23 @@ class SiteAPI:
             self.cache.append(media_item)
         return media_item
 
+    def get_thumbnail(self, media_url, size='small'):
+        """
+
+        :param media_url: the url of the media page.
+        :type media_url: str
+        :param size: the size / resolution of the thumbnail
+                        (default: 'small'). Either 'small' or 'big'.
+        :type size: str
+        :return: the local path of the downloaded thumbnail.
+        :rtype: str
+        """
+        media_data = self.get_information(media_url)
+        thumb_url = media_data[f'thumbnail_{size}']
+        local_path = self.download_file(thumb_url)
+        return local_path
+
+
     def download(self, media_url, folder):
         """ Download files from media_url. Quality, resolution etc is chosen
         automatically according to the configuration. For downloading
@@ -80,7 +97,7 @@ class SiteAPI:
         :returns: two `Downloader` objects for the audio and the video stream.
         :rtype: tuple(`Downloader`, `Downloader`)
         """
-        media_data = self.get_information(media_url)[0]
+        media_data = self.get_information(media_url)
         audio_file, video_file = choose_stream(media_data)
         filename = re.sub('[^a-zA-z0-9]+', '_', media_data['title'])
         path = os.path.join(folder, filename)
