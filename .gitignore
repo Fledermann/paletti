@@ -9,3 +9,6 @@ __pycache__/
 # No plugins, except for the example file
 plugins/
 !plugins/_example_plugin.py
+
+# Private notes etc.
+dev-local/
