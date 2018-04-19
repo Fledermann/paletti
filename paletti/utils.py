@@ -22,8 +22,8 @@ class Downloader:
     def __init__(self, url, path, dash_params=False):
         filesize = self._analyze(url)
         self.dash_params = dash_params
-        self.status = {'active': True, 'filesize': filesize, 'path': path,
-                       'url': url}
+        self.status = {'active': True, 'filesize': filesize, 'finished': False,
+                       'path': path, 'url': url}
         self.thread = None
 
     @staticmethod
@@ -40,10 +40,14 @@ class Downloader:
         filesize = int(response.headers['Content-Length'])
         return filesize
 
-    def _fetch_file(self):
+    def _fetch_file(self, callback=None):
         """ Start downloading the content of the file. While doing so,
         update the `status` dictionary so it can be accessed externally.
 
+        :param callback: the optional callback function which is called after
+                         successfully finishing the download. It will be
+                         called with `self.status` as the only paramter.
+        :type callback: callable
         :returns: None
         """
         self.status['progress'] = 0
@@ -56,15 +60,20 @@ class Downloader:
             with open(path, 'ab') as f:
                 f.write(chunk)
             self.status['progress'] += 1024
+        self.status['finished'] = True
         return
 
-    def _fetch_file_dash(self):
+    def _fetch_file_dash(self, callback=None):
         """ Start downloading the content of the DASH file. While doing so,
         update the `status` dictionary so it can be accessed externally.
         This should always be used instead of `_fetch_file` if the resource
         is a DASH stream, because many content providers throttle a regular,
         direct download after a few MiB.
 
+        :param callback: the optional callback function which is called after
+                         successfully finishing the download. It will be
+                         called with `self.status` as the only paramter.
+        :type callback: callable
         :returns: None
         """
         self.status['progress'] = 0
@@ -85,6 +94,7 @@ class Downloader:
                     f.write(chunk)
                     self.status['progress'] += 1024
             chunk_start = chunk_end + 1
+        self.status['finished'] = True
         return
 
     def cancel(self):

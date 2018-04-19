@@ -10,6 +10,9 @@ import re
 import sys
 import urllib.parse
 import urllib3
+import urllib3.util
+
+from paletti import utils
 
 urllib3.disable_warnings()
 
@@ -68,11 +71,13 @@ class SiteAPI:
             self.cache.append(media_item)
         return media_item
 
-    def get_thumbnail(self, media_url, size='small'):
+    def get_thumbnail(self, media_url, folder, size='small'):
         """
 
         :param media_url: the url of the media page.
         :type media_url: str
+        :param folder: the local folder for the downloaded file
+        :type folder: str
         :param size: the size / resolution of the thumbnail
                         (default: 'small'). Either 'small' or 'big'.
         :type size: str
@@ -81,9 +86,11 @@ class SiteAPI:
         """
         media_data = self.get_information(media_url)
         thumb_url = media_data[f'thumbnail_{size}']
-        local_path = self.download_file(thumb_url)
-        return local_path
-
+        dl = self.download_file(thumb_url, folder)
+        dl.start()
+        while not dl.status['finished']:
+            pass
+        return dl.status['path']
 
     def download(self, media_url, folder):
         """ Download files from media_url. Quality, resolution etc is chosen
@@ -105,14 +112,24 @@ class SiteAPI:
         video_dl = self.plugin.download(video_file, f'{path}.mp4')
         return audio_dl, video_dl
 
-    def download_file(self, url):
+    def download_file(self, url, folder, callback=None):
         """ Download a file directly.
 
         :param url: the url of the file.
         :type url: str
+        :param folder: the folder where the file will be downloaded.
+        :type folder: str
+        :param callback: the optional callback funtion which is called after
+                         successfully finishing the download. It will be
+                         called with `self.status` as the only paramter.
+        :type callback: callable
         :returns: a `Downloader` object.
         """
-        return None
+        parsed_url = urllib3.util.parse_url(url)
+        filename = parsed_url.path.split('/')[-1]
+        path = os.path.join(folder, filename)
+        dl = utils.Downloader(url, path)
+        return dl
 
     def search(self, query):
         """ Perform a search and return the result. The result will be a list
