@@ -92,7 +92,7 @@ class SiteAPI:
             pass
         return dl.status['path']
 
-    def download(self, media_url, folder):
+    def download(self, media_url, folder, **kwargs):
         """ Download files from media_url. Quality, resolution etc is chosen
         automatically according to the configuration. For downloading
         a specific file directly, use `download_file`
@@ -101,6 +101,8 @@ class SiteAPI:
         :type media_url: str
         :param folder: the local folder for the downloaded file
         :type folder: str
+        :keyword callback: a callback function which is called when the process
+                           finished.
         :returns: two `Downloader` objects for the audio and the video stream.
         :rtype: tuple(`Downloader`, `Downloader`)
         """
@@ -108,11 +110,11 @@ class SiteAPI:
         audio_file, video_file = choose_stream(media_data)
         filename = re.sub('[^a-zA-z0-9]+', '_', media_data['title'])
         path = os.path.join(folder, filename)
-        audio_dl = self.plugin.download(audio_file, f'{path}.aac')
-        video_dl = self.plugin.download(video_file, f'{path}.mp4')
+        audio_dl = self.plugin.download(audio_file, f'{path}.aac', **kwargs)
+        video_dl = self.plugin.download(video_file, f'{path}.mp4', **kwargs)
         return audio_dl, video_dl
 
-    def download_file(self, url, folder, callback=None):
+    def download_file(self, url, folder, **kwargs):
         """ Download a file directly.
 
         :param url: the url of the file.

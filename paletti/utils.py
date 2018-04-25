@@ -22,9 +22,12 @@ class Downloader:
     def __init__(self, url, path, dash_params=False):
         filesize = self._analyze(url)
         self.dash_params = dash_params
-        self.status = {'active': True, 'filesize': filesize, 'finished': False,
-                       'path': path, 'url': url}
+        self.filesize = filesize
+        self.path = path
+        self.progress = 0
+        self.status = 'idle'
         self.thread = None
+        self.url = url
 
     @staticmethod
     def _analyze(url):
@@ -50,17 +53,18 @@ class Downloader:
         :type callback: callable
         :returns: None
         """
-        self.status['progress'] = 0
-        path = self.status['path']
+        self.status = 'active'
         http = urllib3.PoolManager()
-        response = http.request('GET', self.status['url'], preload_content=False)
+        response = http.request('GET', self.url, preload_content=False)
         for chunk in response.stream(1024):
-            if not self.status['active']:
+            if self.status != 'active':
                 break
-            with open(path, 'ab') as f:
+            with open(self.path, 'ab') as f:
                 f.write(chunk)
-            self.status['progress'] += 1024
-        self.status['finished'] = True
+            self.progress += 1024
+        self.status = 'finished'
+        if callback:
+            callback(self)
         return
 
     def _fetch_file_dash(self, callback=None):
@@ -76,25 +80,25 @@ class Downloader:
         :type callback: callable
         :returns: None
         """
-        self.status['progress'] = 0
-        url = self.status['url']
-        path = self.status['path']
-        dp = self.dash_params
+        self.status = 'active'
         http = urllib3.PoolManager()
-        dash_chunk_size = 1024 * 1024 * 10
+        dash_chunk_size = 10_485_760
         chunk_start = 0
-        while self.status['progress'] < self.status['filesize']:
+        while self.progress < self.filesize:
             chunk_end = chunk_start + dash_chunk_size - 1
-            dash_url = f'{url}&{dp["key"]}={chunk_start}{dp["format"]}{chunk_end}'
+            dash_url = f'{self.url}&{self.dash_params["key"]}={chunk_start}' \
+                       f'{self.dash_params["format"]}{chunk_end}'
             response = http.request('GET', dash_url, preload_content=False)
-            with open(path, 'ab') as f:
+            with open(self.path, 'ab') as f:
                 for chunk in response.stream(1024):
-                    if not self.status['active']:
+                    if not self.status != 'active':
                         return
                     f.write(chunk)
-                    self.status['progress'] += 1024
+                    self.progress += 1024
             chunk_start = chunk_end + 1
-        self.status['finished'] = True
+        self.status = 'finished'
+        if callback:
+            callback(self)
         return
 
     def cancel(self):
@@ -102,7 +106,7 @@ class Downloader:
 
         :returns: None
         """
-        self.status['active'] = False
+        self.status = 'cancelled'
         self.thread.join()
         return None
 
