@@ -55,6 +55,16 @@ class SiteAPI:
                 return item
         return None
 
+    def _make_filename(self, title):
+        """ Create a descriptive and safe filename from the title.
+
+        :param title: the title of the media object.
+        :type title: str
+        :return: the filename.
+        :rtype: str
+        """
+        return re.sub('[^a-zA-z0-9]+', '_', title)
+
     def get_information(self, media_url):
         """ Fetch information for the specified media url and return a
         dict.
@@ -103,16 +113,27 @@ class SiteAPI:
         :type folder: str
         :keyword callback: a callback function which is called when the process
                            finished.
-        :returns: two `Downloader` objects for the audio and the video stream.
-        :rtype: tuple(`Downloader`, `Downloader`)
+        :type callback: callable
+        :returns: One or two `Downloader` objects, depending on the site and
+                  the media type.
+        :rtype: list
         """
         media_data = self.get_information(media_url)
-        audio_file, video_file = choose_stream(media_data)
-        filename = re.sub('[^a-zA-z0-9]+', '_', media_data['title'])
+        stream_type = self.plugin.STREAM_TYPE
+        downloads = []
+        if 'video' in stream_type:
+            video_file = choose_stream(media_data, 'video')
+            downloads.append(video_file)
+        if 'seperate' in stream_type or 'audio' in stream_type:
+            audio_file = choose_stream(media_data, 'audio')
+            downloads.append(audio_file)
+        filename = self._make_filename(media_data['title'])
         path = os.path.join(folder, filename)
-        audio_dl = self.plugin.download(audio_file, f'{path}.aac', **kwargs)
-        video_dl = self.plugin.download(video_file, f'{path}.mp4', **kwargs)
-        return audio_dl, video_dl
+        output = []
+        for i, d in enumerate(downloads):
+            dl = self.plugin.download(d, f'{path}.{i}', **kwargs)
+            output.append(dl)
+        return output
 
     def download_file(self, url, folder, **kwargs):
         """ Download a file directly.
@@ -130,7 +151,7 @@ class SiteAPI:
         parsed_url = urllib3.util.parse_url(url)
         filename = parsed_url.path.split('/')[-1]
         path = os.path.join(folder, filename)
-        dl = utils.Downloader(url, path)
+        dl = utils.Downloader(url, path, **kwargs)
         return dl
 
     def search(self, query):
@@ -146,23 +167,24 @@ class SiteAPI:
         return self.plugin.search(query)
 
 
-def choose_stream(media_data):
-    """ Choose the correct file urls according to the settings and available
+def choose_stream(media_data, type_):
+    """ Choose the correct file url according to the settings and available
     streams.
 
     :param media_data: the metadata of the media.
     :type media_data: dict
-    :returns: the audio and video field urls
-    :rtype: tuple(str, str)
+    :param type_: the type of stream to choose (video or audio).
+    :type type_: str
+    :returns: the stream url.
+    :rtype: str
     """
-    for stream in media_data['streams']:
-        if stream['type'] == 'video':
-            if stream['quality_label'] == DEFAULT_QUALITY and stream['container'] == DEFAULT_CONTAINER:
-                video_file = stream['url']
-        else:
-            if stream['container'] == DEFAULT_CONTAINER:
-                audio_file = stream['url']
-    return audio_file, video_file
+    streams = [s for s in media_data['streams'] if
+               s['type'] == type_ and s['container'] == DEFAULT_CONTAINER]
+    if type_ == 'audio':
+        return streams[0]['url']
+    for s in streams:
+        if s['quality'] == DEFAULT_QUALITY:
+            return s['url']
 
 
 def fetch_plugins_from_repo(url, branch='master', force=False):
