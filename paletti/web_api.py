@@ -8,7 +8,6 @@ import os
 import pkgutil
 import re
 import sys
-import urllib.parse
 import urllib3
 import urllib3.util
 

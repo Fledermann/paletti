@@ -1,11 +1,37 @@
 #!/usr/bin/env python
 
+import os
+import urllib.parse
 import urllib3.util
+import sys
 
 import paletti.web_api
 
+PATH = os.path.dirname(__file__)
+sys.path.append(PATH)
+PLUGIN_FOLDER = os.path.join(PATH, 'plugins')
 
 plugins = {}
+
+
+def _get_api(name):
+    """ Find the right `SiteAPI` instance based on the name.
+
+    :param name: the name of the plugin.
+    :type name: str
+    :return: the api instance.
+    :rtype: `SiteAPI`
+    """
+    global plugins
+    if name in plugins:
+        return plugins[name]
+    try:
+        plugin = paletti.web_api.SiteAPI(name)
+        plugins[name] = plugin
+        return plugin
+    except ModuleNotFoundError:
+        print('Error: host not recognized (there is no plugin for that).')
+        return None
 
 
 def fetch(url):
@@ -18,12 +44,12 @@ def fetch(url):
     parsed_url = urllib3.util.parse_url(url)
     host = parsed_url.host
     plugin = paletti.web_api.get_plugin_for_host(host)
-    api = get_api(plugin)
+    api = _get_api(plugin)
     if api:
         return api.get_information(url)
 
 
-def fetch_plugins_from_repo(url, branch='master', force=False):
+def get_plugins_from_repo(url, branch='master', force=False):
     """ Find and download all the plugins from the github repository.
 
     :param url: the .git url.
@@ -56,26 +82,6 @@ def fetch_plugins_from_repo(url, branch='master', force=False):
             print(f'File {file_local} already exists, not overwriting.')
 
 
-def get_api(name):
-    """ Find the right `SiteAPI` instance based on the name.
-
-    :param name: the name of the plugin.
-    :type name: str
-    :return: the api instance.
-    :rtype: `SiteAPI`
-    """
-    global plugins
-    if name in plugins:
-        return plugins[name]
-    try:
-        plugin = paletti.web_api.SiteAPI(name)
-        plugins[name] = plugin
-        return plugin
-    except ModuleNotFoundError:
-        print('Error: host not recognized (there is no plugin for that).')
-        return None
-
-
 def search(query, plugin):
     """ Perform a search and return the results.
 
@@ -86,6 +92,6 @@ def search(query, plugin):
     :return: the search result.
     :rtype: list(dict)
     """
-    api = get_api(plugin)
+    api = _get_api(plugin)
     if api:
         return api.search(query)
