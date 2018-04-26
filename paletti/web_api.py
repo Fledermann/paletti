@@ -35,6 +35,7 @@ class SiteAPI:
         :type plugin_name: str
         """
         self.cache = []
+        self.name = plugin_name
         plugins_all = find_modules(PLUGIN_FOLDER)
         try:
             package_name = plugins_all[plugin_name]
@@ -51,6 +52,7 @@ class SiteAPI:
         :return: dict or None
         """
         for item in self.cache:
+            print(item)
             if item['url'] == media_url:
                 return item
         return None
@@ -187,39 +189,6 @@ def choose_stream(media_data, type_):
             return s['url']
 
 
-def fetch_plugins_from_repo(url, branch='master', force=False):
-    """ Find and download all the plugins from the github repository.
-
-    :param url: the .git url.
-    :type url: str
-    :param branch: the branch, default: "master"
-    :type branch: str
-    :param force: if true, overwrite local files.
-    :type force: bool
-    :return: None
-    """
-    url = url.replace('.git', '/')
-    host = 'raw.githubusercontent.com'
-    parsed_url = urllib3.util.parse_url(url)
-    branch_root = urllib.parse.urljoin(parsed_url.path, branch + '/')
-    plugin_path = urllib.parse.urljoin(branch_root, 'plugins/')
-    plugin_index = urllib.parse.urljoin(plugin_path, '_index.txt')
-    http = urllib3.HTTPSConnectionPool(host)
-    response = http.request('GET', plugin_index)
-    for name in response.data.split():
-        filename = name.decode('utf-8') + '.py'
-        file_url = urllib.parse.urljoin(plugin_path, filename)
-        file_local = os.path.join(PLUGIN_FOLDER, filename)
-        file_exists = os.path.isfile(file_local)
-        if not file_exists or force:
-            r = http.request('GET', file_url)
-            with open(file_local, 'wb') as f:
-                f.write(r.data)
-            print(f'Wrote {file_local}')
-        else:
-            print(f'File {file_local} already exists, not overwriting.')
-
-
 def find_modules(directory):
     """ Find all modules from a given folder and return their names
     and full paths. Ignore files starting with an underscore.
@@ -237,6 +206,21 @@ def find_modules(directory):
         if not plugin.name.startswith('_'):
             available_plugins[plugin.name] = full_package_name
     return available_plugins
+
+
+def get_plugin_for_host(host):
+    """ Find the plugin which handles 'host' and return it.
+
+    :param host: the host
+    :type host: str
+    :return: the module
+    """
+    # FIXME: this loads all modules only to discard them.
+    all_plugins = find_modules(PLUGIN_FOLDER)
+    for name, package in all_plugins.items():
+        module = importlib.import_module(package)
+        if host in module.HOSTS:
+            return name
 
 
 def show_plugins():
