@@ -7,4 +7,5 @@ __maintainer__ = 'Fledermann'
 __email__ = '37776145+Fledermann@users.noreply.github.com'
 __status__ = 'Prototype'
 
-from paletti.main import fetch, get_plugins_from_repo, search
+from paletti.main import get_plugins_from_repo
+from paletti.web_api import metadata, search, stream_urls

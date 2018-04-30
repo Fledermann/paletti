@@ -3,6 +3,7 @@
 """ Provide an easy and intuitive way to fetch data from streaming
 websites. """
 
+import functools
 import importlib
 import os
 import pkgutil
@@ -22,6 +23,137 @@ DEFAULT_QUALITY = '720p'
 DEFAULT_CONTAINER = 'mp4'
 
 
+def cache(func):
+    """ A decorator function which caches the results of requests.
+
+    :param func: the decorated function.
+    :type func: callable
+    :return: dict of media data.
+    :rtype: dict
+    """
+    cache_list = []
+
+    def wrapper(*args):
+        for item in cache_list:
+            if item['url'] == args[1]:
+                return item
+        media_item = func(*args)
+        cache_list.append(media_item)
+        return media_item
+    return wrapper
+
+
+def module(func):
+    """ A decorator function which provides the necessary plugin modules.
+
+    :param func: the decorated function.
+    :return: the module
+    """
+    plugin_list = []
+    packages = pkgutil.walk_packages([PLUGIN_FOLDER])
+    for plugin in packages:
+        folder = os.path.normpath(PLUGIN_FOLDER).split(os.sep)[-1]
+        full_package_name = f'{folder}.{plugin.name}'
+        mod = importlib.import_module(full_package_name)
+        if not plugin.name.startswith('_'):
+            plugin_data = {'name': plugin.name,
+                           'module': mod,
+                           'hosts': mod.HOSTS,
+                           'type': mod.STREAM_TYPE}
+            plugin_list.append(plugin_data)
+
+    def wrapper(plugin_name_or_url, *args):
+        host = urllib3.util.parse_url(plugin_name_or_url).host
+        for item in plugin_list:
+            if host == item['name'] or host in item['hosts']:
+                mod = item['module']
+                break
+        else:
+                raise ModuleNotFoundError
+        if not args:
+            args = (plugin_name_or_url, )
+        return func(mod, *args)
+    return wrapper
+
+
+@module
+@cache
+def metadata(plugin, media_url):
+    """ Fetch information for the specified media url and return a
+    dict.
+
+    :param plugin: the plugin.
+    :type plugin: module
+    :param media_url: the url of the media page.
+    :type media_url: str
+    :returns: all the information / metadata found.
+    :rtype: dict
+    """
+    return plugin.get_metadata(media_url)
+
+
+@module
+def search(plugin, query):
+    """ Perform a search and return the result. The result will be a list
+    of dicts, each dict containing some basic data for the stream like
+    title, duration etc.
+
+    :param plugin: the plugin.
+    :type plugin: module
+    :param query: the search query.
+    :type query: str
+    :returns: the search result.
+    :rtype: list
+    """
+    return plugin.search(query)
+
+
+def filter_stream(*args):
+    """ Look up values in a dict. Return true if all values were found.
+
+    :param args: an arbitrary number of values. Last argument is the
+                 dict.
+    :type args: tuple(str)
+    :return: True if all values were present, False otherwise.
+    :rtype: bool
+    """
+    stream = args[-1]
+    for param in args[:-1]:
+        if param not in stream.values():
+            return False
+    return True
+
+
+def stream_urls(media_url, quality='1080p', container='webm'):
+    """ Given a media url, return the absolute stream files.
+
+    :param media_url: the media url.
+    :type media_url: str
+    :param quality: the stream quality (concerns only video files).
+    :type quality: str
+    :param container: the container format. Usually either mp4 or webm.
+    :type container: str
+    :return: the video url and the audio url.
+    :rtype: tuple(str, str)
+    """
+    item = metadata(media_url)
+    streams = item['streams']
+    video_url, audio_url = '', ''
+    if video:
+        video_streams = list(filter(functools.partial(filter_stream, 'video', quality, container), streams))
+        if video_streams:
+            video_url = video_streams[0]['url']
+    if audio:
+        audio_streams = list(filter(functools.partial(filter_stream, 'audio', container), streams))
+        if audio_streams:
+            best = audio_streams[0]
+            for stream in audio_streams:
+                if int(stream['quality']) > int(best['quality']):
+                    best = stream
+            audio_url = best['url']
+    return video_url, audio_url
+
+
 class SiteAPI:
     """ Handle the user-friendly communication between the user and the plugin
     aka crawler.
@@ -33,7 +165,6 @@ class SiteAPI:
         :param plugin_name: the plugin to use.
         :type plugin_name: str
         """
-        self.cache = []
         self.name = plugin_name
         plugins_all = find_modules(PLUGIN_FOLDER)
         try:
@@ -41,20 +172,6 @@ class SiteAPI:
         except KeyError:
             raise ModuleNotFoundError(f'Plugin {plugin_name} not found.')
         self.plugin = importlib.import_module(package_name)
-
-    def _get_from_cache(self, media_url):
-        """ Return a cached item, if available. If nothing is found,
-        return None.
-
-        :param media_url: the url of the media page.
-        :type media_url: str
-        :return: dict or None
-        """
-        for item in self.cache:
-            print(item)
-            if item['url'] == media_url:
-                return item
-        return None
 
     def _make_filename(self, title):
         """ Create a descriptive and safe filename from the title.
@@ -66,6 +183,7 @@ class SiteAPI:
         """
         return re.sub('[^a-zA-z0-9]+', '_', title)
 
+    @cache
     def get_information(self, media_url):
         """ Fetch information for the specified media url and return a
         dict.
@@ -75,12 +193,7 @@ class SiteAPI:
         :returns: all the information / metadata found.
         :rtype: dict
         """
-
-        media_item = self._get_from_cache(media_url)
-        if not media_item:
-            media_item = self.plugin.get_metadata(media_url)
-            self.cache.append(media_item)
-        return media_item
+        return self.plugin.get_metadata(media_url)
 
     def get_thumbnail(self, media_url, folder, size='small'):
         """
