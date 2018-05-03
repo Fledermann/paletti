@@ -12,8 +12,6 @@ import sys
 import urllib3
 import urllib3.util
 
-from decorator import decorator
-
 from paletti import utils
 
 urllib3.disable_warnings()
@@ -25,7 +23,6 @@ DEFAULT_QUALITY = '720p'
 DEFAULT_CONTAINER = 'mp4'
 
 
-@decorator
 def cache(func):
     """ A decorator function which caches the results of requests.
 
@@ -34,9 +31,9 @@ def cache(func):
     :return: dict of media data.
     :rtype: dict
     """
-    functools.wraps(func)
     cache_list = []
 
+    @functools.wraps(func)
     def wrapper(*args):
         for item in cache_list:
             if item['url'] == args[1]:
@@ -47,14 +44,12 @@ def cache(func):
     return wrapper
 
 
-@decorator
 def module(func):
     """ A decorator function which provides the necessary plugin modules.
 
     :param func: the decorated function.
     :return: the module
     """
-    functools.wraps(func)
     plugin_list = []
     packages = pkgutil.walk_packages([PLUGIN_FOLDER])
     for plugin in packages:
@@ -68,6 +63,7 @@ def module(func):
                            'type': mod.STREAM_TYPE}
             plugin_list.append(plugin_data)
 
+    @functools.wraps(func)
     def wrapper(plugin_name_or_url, *args):
         host = urllib3.util.parse_url(plugin_name_or_url).host
         for item in plugin_list:
