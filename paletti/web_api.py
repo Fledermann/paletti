@@ -336,10 +336,10 @@ def get_plugin_for_host(host):
 
 
 def show_plugins():
-    """ Return all available plugins.
+    """ Return the names of all available plugins.
 
     :returns: the plugins.
-    :rtype: list
+    :rtype: list(str)
     """
     plugins = find_modules(PLUGIN_FOLDER)
     return list(plugins.keys())

@@ -5,4 +5,4 @@ web\_api module
     :members:
     :undoc-members:
     :show-inheritance:
-    :exclude-members: cache, module, filter_stream, SiteAPI
+    :exclude-members: cache, module, filter_stream, SiteAPI, choose_stream, get_plugin_for_host, find_modules
