@@ -12,6 +12,8 @@ import sys
 import urllib3
 import urllib3.util
 
+from decorator import decorator
+
 from paletti import utils
 
 urllib3.disable_warnings()
@@ -23,6 +25,7 @@ DEFAULT_QUALITY = '720p'
 DEFAULT_CONTAINER = 'mp4'
 
 
+@decorator
 def cache(func):
     """ A decorator function which caches the results of requests.
 
@@ -33,7 +36,7 @@ def cache(func):
     """
     functools.wraps(func)
     cache_list = []
-    
+
     def wrapper(*args):
         for item in cache_list:
             if item['url'] == args[1]:
@@ -44,6 +47,7 @@ def cache(func):
     return wrapper
 
 
+@decorator
 def module(func):
     """ A decorator function which provides the necessary plugin modules.
 
