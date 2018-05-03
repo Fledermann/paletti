@@ -31,8 +31,9 @@ def cache(func):
     :return: dict of media data.
     :rtype: dict
     """
+    functools.wraps(func)
     cache_list = []
-
+    
     def wrapper(*args):
         for item in cache_list:
             if item['url'] == args[1]:
@@ -49,6 +50,7 @@ def module(func):
     :param func: the decorated function.
     :return: the module
     """
+    functools.wraps(func)
     plugin_list = []
     packages = pkgutil.walk_packages([PLUGIN_FOLDER])
     for plugin in packages:
@@ -139,19 +141,17 @@ def stream_urls(media_url, quality='1080p', container='webm'):
     item = metadata(media_url)
     streams = item['streams']
     video_url, audio_url = '', ''
-    if video:
-        video_streams = list(filter(functools.partial(filter_stream, 'video', quality, container), streams))
-        if video_streams:
-            video_url = video_streams[0]['url']
-    if audio:
-        audio_streams = list(filter(functools.partial(filter_stream, 'audio', container), streams))
-        if audio_streams:
-            best = audio_streams[0]
-            for stream in audio_streams:
-                if int(stream['quality']) > int(best['quality']):
-                    best = stream
-            audio_url = best['url']
-    return video_url, audio_url
+    video_streams = list(filter(functools.partial(filter_stream, 'video', quality, container), streams))
+    if video_streams:
+        video_url = video_streams[0]['url']
+    audio_streams = list(filter(functools.partial(filter_stream, 'audio', container), streams))
+    if audio_streams:
+        best = audio_streams[0]
+        for stream in audio_streams:
+            if int(stream['quality']) > int(best['quality']):
+                best = stream
+        audio_url = best['url']
+    return audio_url, video_url
 
 
 class SiteAPI:
