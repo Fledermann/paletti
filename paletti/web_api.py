@@ -12,13 +12,9 @@ import sys
 import urllib3
 import urllib3.util
 
-urllib3.disable_warnings()
-
 PATH = os.path.dirname(__file__)
 sys.path.append(PATH)
 PLUGIN_FOLDER = os.path.join(PATH, 'plugins')
-DEFAULT_QUALITY = '720p'
-DEFAULT_CONTAINER = 'mp4'
 
 
 def cache(func):
@@ -151,9 +147,9 @@ def stream_urls(media_url, quality='1080p', container='webm'):
     """ Given a media url, return the absolute stream files.
 
     :param str media_url: the media url.
-    :keyword str quality: the stream quality (concerns only video files).
+    :param str quality: the stream quality (concerns only video files).
                           Default: '1080p'.
-    :keyword str container: the container format. Usually either mp4 or webm.
+    :param str container: the container format. Usually either mp4 or webm.
                             Default: 'webm'.
     :return: the video url and the audio url.
     :rtype: tuple(str, str)
