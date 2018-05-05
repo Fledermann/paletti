@@ -3,12 +3,13 @@
 """ Runner for all unittests.
 
 """
-import os
+
+import pathlib
 import unittest
 import sys
 
-root_path = os.path.abspath('../')
-sys.path.append(root_path)
+root = pathlib.Path(__file__).resolve().parent.parent
+sys.path.append(str(root))
 
 from unittests import test_utils
 from unittests import test_web_api
