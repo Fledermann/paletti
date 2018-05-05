@@ -21,8 +21,8 @@ def cache(func):
     """ A decorator function which caches the results of requests.
 
     :param callable func: the decorated function.
-    :return: dict of media data.
-    :rtype: dict
+    :return: the wrapper.
+    :rtype: callable
     """
     cache_list = []
 
@@ -41,7 +41,8 @@ def module(func):
     """ A decorator function which provides the necessary plugin modules.
 
     :param callable func: the decorated function.
-    :return: the module
+    :return: the wrapper.
+    :rtype: callable
     """
     plugin_list = []
     packages = pkgutil.walk_packages([PLUGIN_FOLDER])

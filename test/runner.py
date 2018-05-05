@@ -7,6 +7,7 @@ import sys
 root_path = os.path.abspath('../')
 sys.path.append(root_path)
 
+import functional
 import test_utils
 import test_web_api
 

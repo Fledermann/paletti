@@ -61,15 +61,15 @@ it determined automatically.
 Gathering Data
 ______________
 
-If we need additional information about out search results, we use the
+If we need additional information about our search results, we use the
 `metadata` function. Again, the result is a dictionary, only this time with
 more information:
 
 .. code-block:: python
 
    >>> url = results[0]['url']
-   >>> metadata = paletti.fetch(url)
-   >>> metadata.keys()
+   >>> md = paletti.metadata(url)
+   >>> md.keys()
    dict_keys(['duration', 'title', 'likes', 'dislikes', 'desc', 'author', 'view_count',
    'thumbnail_small', 'thumbnail_big', 'avg_rating', 'streams', 'upload_date'])
 
