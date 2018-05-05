@@ -1,8 +1,5 @@
 #!/usr/bin/python
 
-""" All test cases and their' parameters for `functional` go here.
-"""
-
 test_cases = {
     'test_search': [
         'Numberphile',

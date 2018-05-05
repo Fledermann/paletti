@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-""" Unittests for the web_api module. To avoid path problems and for
-convienience, this module shouldn't be run directly, use the runner
-(paletti/paletti/test/unittest_run.py) instead. """
+""" Unittests for the `web_api` module. To avoid path problems and for
+convienience, this module shouldn't be run directly, use the runner instead.
+"""
 
 import unittest
 

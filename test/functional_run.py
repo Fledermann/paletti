@@ -3,7 +3,6 @@
 """ This module is intended for functional testing, since many of the complex
 tasks, like crawling and streaming, cannot be unit-tested reasonably.
 
-Test functions go here, the parameters and test cases go in `api_test_cases`.
 """
 
 import inspect

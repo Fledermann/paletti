@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+""" Runner for all unittests.
+
+"""
 import os
 import unittest
 import sys
