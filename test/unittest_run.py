@@ -7,9 +7,8 @@ import sys
 root_path = os.path.abspath('../')
 sys.path.append(root_path)
 
-import functional
-import test_utils
-import test_web_api
+from unittests import test_utils
+from unittests import test_web_api
 
 loader = unittest.TestLoader()
 suite = unittest.TestSuite()

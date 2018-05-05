@@ -12,7 +12,7 @@ import random
 import sys
 import threading
 
-from functional_cases import test_cases
+from functional.cases import test_cases
 
 root = pathlib.Path(__file__).resolve().parent.parent
 sys.path.append(str(root))
