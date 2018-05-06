@@ -10,6 +10,7 @@ import pathlib
 import random
 import sys
 import threading
+import time
 
 from functional.cases import test_cases
 
@@ -59,6 +60,11 @@ def report_error(reason, **kwargs):
 def test_download(url):
     d = paletti.download(url)
     d.start()
+    while True:
+        time.sleep(1)
+        if d.status != 'active':
+            break
+        print(f'{d.output:.20s}...: {d.progress/1024:7.0f} of {d.filesize/1024:7.0f} kb.')
 
 
 @threaded

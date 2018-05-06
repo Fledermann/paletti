@@ -7,7 +7,6 @@ import functools
 import importlib
 import os
 import pkgutil
-import re
 import sys
 import urllib3
 import urllib3.util
@@ -75,19 +74,35 @@ def module(func):
     return wrapper
 
 
-def _filter_stream(*args):
-    """ Look up values in a dict. Return true if all values were found.
+def _filter_stream(streams, type_, quality, container):
+    """ Look up the properties of the video streams and filter by keyword
+    arguments. A certain level of interpretation is used, if the exact stream
+    is not found. It will only return None if the container format
+    is not provided.
 
     :param tuple(str) args: an arbitrary number of values. Last argument is the
                             dict.
     :return: True if all values were present, False otherwise.
     :rtype: bool
     """
-    stream = args[-1]
-    for param in args[:-1]:
-        if param not in stream.values():
-            return False
-    return True
+    streams = sorted(streams, key=lambda k: k['quality_int'], reverse=True)
+    result = [s for s in streams if s['type'] == type_]
+    if not result:
+        if type_ == 'audio':
+            return None
+        result = [s for s in streams if s['type'] == 'audio+video']
+    result_ = [s for s in result if s['container'] == container]
+    if not result_:
+        print(f'Container {container} not available, choosing another one.')
+        result_ = result
+    best_available = result_[0]['quality']
+    if quality == 'best':
+        result__ = [s for s in result_ if s['quality'] == best_available]
+    else:
+        result__ = [s for s in result_ if s['quality'] == quality]
+        if not result__:
+            result__ = [s for s in result_ if s['quality'] == best_available]
+    return result__[0]
 
 
 @module
@@ -95,10 +110,17 @@ def channel(plugin, url):
     raise NotImplementedError
 
 
-def download(media_url):
-    streams_dict = streams(media_url)
+def download(media_url, audio=True, video=True, **kwargs):
+    streams_dict = streams(media_url, **kwargs)
     md = metadata(media_url)
     fn = utils.make_filename(md['title'])
+    if not video:
+        if not streams_dict[0]:
+            print('Sorry, audio only is not available for this stream.')
+            return None
+        streams_dict[1] = None
+    if not audio:
+        streams_dict[0] = None
     d = Download(streams_dict, f'/tmp/{fn}', utils.merge_files)
     return d
 
@@ -145,7 +167,7 @@ def search(plugin, query_or_url, **kwargs):
     return methods[request](query_or_url, **kwargs)
 
 
-def streams(media_url, quality='720p', container='webm'):
+def streams(media_url, quality='best', container='webm'):
     """ Given a media url, return the stream dicts.
 
     :param str media_url: the media url.
@@ -158,20 +180,9 @@ def streams(media_url, quality='720p', container='webm'):
     """
     item = metadata(media_url)
     stream_dicts = item['streams']
-    video_stream, audio_stream = {}, {}
-    video_streams = list(filter(functools.partial(_filter_stream, 'video', quality, container), stream_dicts))
-    if video_streams:
-        video_stream = video_streams[0]
-    else:
-        video_stream = item['streams'][0]
-    audio_streams = list(filter(functools.partial(_filter_stream, 'audio', container), stream_dicts))
-    if audio_streams:
-        best = audio_streams[0]
-        for stream in audio_streams:
-            if int(stream['quality']) > int(best['quality']):
-                best = stream
-        audio_stream = best
-    return audio_stream, video_stream
+    video_stream = _filter_stream(stream_dicts, 'video', quality, container)
+    audio_stream = _filter_stream(stream_dicts, 'audio', quality, container)
+    return [audio_stream, video_stream]
 
 
 @module

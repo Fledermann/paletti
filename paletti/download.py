@@ -59,7 +59,7 @@ class Download:
             dash_url = f'{stream["url"]}&{dash_params["key"]}={chunk_start}' \
                        f'{dash_params["format"]}{chunk_end}'
             response = http.request('GET', dash_url, preload_content=False)
-            filepath = f'{self.output}.{stream["container"]}.{stream["type"]}'
+            filepath = f'{self.output}.{stream["container"]}.{stream["type"]}.{stream["codec"]}'
             with open(filepath, 'ab') as f:
                 for chunk in response.stream(1024):
                     if self.status != 'active':

@@ -23,7 +23,9 @@ test_cases = {
         'http://m.youtube.com/watch?v=BDEo5XpZcXo',
         'http://m.youtube.com/watch?v=BDEo5XpZcXo',
         'https://m.youtube.com/watch?v=BDEo5XpZcXo',
-        'https://m.youtube.com/watch?v=BDEo5XpZcXo'],
+        'https://m.youtube.com/watch?v=BDEo5XpZcXo',
+        'https://www.youtube.com/watch?v=5jJTunjNucc',
+        'https://www.youtube.com/watch?v=UtMfQzcCmaI'],
 
     'test_playlist': [
         'http://youtube.com/playlist?list=PLAzDjZDAksx3R2p12EJv5tEcnBbJ5RtVQ',
@@ -31,6 +33,7 @@ test_cases = {
         'https://www.youtube.com/playlist?list=PLK9Sc5q_4K6aNajVLKtkaAB1JGmKyccf2'],
 
     'test_download': [
-        'https://www.youtube.com/watch?v=XlKy3nYIKwE',
-        'https://www.youtube.com/watch?v=eLYhnBaWOzc']
+        #'https://www.youtube.com/watch?v=XlKy3nYIKwE',
+        #'https://www.youtube.com/watch?v=eLYhnBaWOzc',
+        'https://www.youtube.com/watch?v=DN9DW4rrEjY']
 }

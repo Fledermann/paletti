@@ -28,14 +28,14 @@ def merge_files(path):
     audio, video = '', ''
     for item in os.listdir(folder):
         try:
-            name, container, type_ = item.split('.')
+            name, container, type_, codec = item.split('.')
         except ValueError:
             continue
         if name == filename:
             out_file = folder / f'{filename}.{container}'
             if type_ == 'audio':
                 audio = folder / item
-            if type_ == 'video':
+            if type_ == 'video' or type_ == 'audio+video':
                 video = folder / item
     if audio and video:
         subprocess.call(f'ffmpeg -i {audio} -i {video} -c:a copy -c:v copy {out_file}',
@@ -43,6 +43,8 @@ def merge_files(path):
         os.remove(audio)
         os.remove(video)
     elif audio:
+        out_file = folder / f'{filename}.{codec}'
         os.rename(audio, out_file)
     elif video:
+        out_file = folder / f'{filename}.{codec}'
         os.rename(video, out_file)
