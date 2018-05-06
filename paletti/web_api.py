@@ -110,7 +110,7 @@ def channel(plugin, url):
     raise NotImplementedError
 
 
-def download(media_url, folder, audio=True, video=True, **kwargs):
+def download(media_url, folder, audio=True, video=True, subtitles=False, **kwargs):
     streams_dict = streams(media_url, **kwargs)
     md = metadata(media_url)
     fn = utils.make_filename(md['title'])
@@ -122,6 +122,11 @@ def download(media_url, folder, audio=True, video=True, **kwargs):
     if not audio:
         streams_dict[0] = None
     filepath = os.path.join(folder, fn)
+    if subtitles:
+        subs = get_subtitles(media_url, lang=subtitles)
+        if subs:
+            with open(f'{filepath}.srt', 'w') as f:
+                f.write(subs)
     d = Download(streams_dict, f'{filepath}', utils.merge_files)
     return d
 
@@ -184,6 +189,11 @@ def streams(media_url, quality='best', container='webm'):
     video_stream = _filter_stream(stream_dicts, 'video', quality, container)
     audio_stream = _filter_stream(stream_dicts, 'audio', quality, container)
     return [audio_stream, video_stream]
+
+
+@module
+def get_subtitles(plugin, media_url, lang='en'):
+    return plugin.get_subtitles(media_url, lang)
 
 
 @module
