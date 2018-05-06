@@ -6,6 +6,9 @@ Paletti aims to be usable in multiple ways: as a command-line tool,
 as a graphical application and as a module. Let's start off by using
 paletti as a module.
 
+Downloading Plugins
+___________________
+
 If paletti is freshly installed or downloaded, you will need to download
 the plugins (i.e. crawlers for the different websites).
 
@@ -28,13 +31,13 @@ _________
 
 .. code-block:: python
 
-   >>> result = paletti.search('youtube', 'Python compiler')
-   >>> result[0]
+   >>> videos = paletti.search('youtube', 'Python compiler')
+   >>> videos[0]
    {'type': 'video', 'url': 'https://m.youtube.com/watch?v=pzc4vYqbruk', 'title': 'How to compile your Python code', 'thumbnail': 'https://youtube.com/vi/pzc4vYqbruk/mqdefault.jpg'}
-   >>> len(result)
+   >>> len(videos)
    20
-   >>> result = paletti.search('youtube', 'Python compiler', results=66)
-   >>> len(result)
+   >>> videos = paletti.search('youtube', 'Python compiler', results=66)
+   >>> len(videos)
    66
    >>>
 
@@ -50,15 +53,15 @@ videos:
 .. code-block:: python
 
    >>> playlist_url = 'https://m.youtube.com/playlist?list=PLt5AfwLFPxWLNZRKWlcRmTABh_SExiiCj'
-   >>> result = paletti.search(playlist_url, results=0)
-   >>> len(result)
+   >>> videos = paletti.search(playlist_url, results=0)
+   >>> len(videos)
    62
    >>>
 
 Note that when searching in playlists, no plugin needs to be specified as this
 it determined automatically.
 
-Gathering Data
+Metadata
 ______________
 
 If we need additional information about our search results, we use the
@@ -67,9 +70,35 @@ more information:
 
 .. code-block:: python
 
-   >>> url = results[0]['url']
+   >>> url = videos[0]['url']
    >>> md = paletti.metadata(url)
    >>> md.keys()
    dict_keys(['duration', 'title', 'likes', 'dislikes', 'desc', 'author', 'view_count',
    'thumbnail_small', 'thumbnail_big', 'avg_rating', 'streams', 'upload_date'])
 
+Downloading
+___________
+
+Downloading videos (and audio files) is straightforward.
+
+.. code-block:: python
+
+   >>> dl = paletti.download(url)
+   >>> dl
+   <Download: {'status': 'idle', 'filesize': 5562776, ... >
+   >>> dl.start()
+   
+The download function returns a `Download` instance wich runs in a Thread.
+The current status of the download can be seen by the various attributes:
+`filesize` (total filesize in bytes), `progess` (in bytes), `output` 
+(where the file will be written) and `status` (either idle, active or cancelled).
+The running download can be stopped with `cancel()`.
+
+The function takes various keyword arguments: `audio`, `video`, `quality` and
+`container`. So, to get the opus audio stream only:
+
+.. code-block:: python
+
+   >>> dl = paletti.download(url, video=False, container='webm')
+   >>> dl.start()
+   

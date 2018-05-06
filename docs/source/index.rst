@@ -1,5 +1,5 @@
 
-paletti documentation
+Paletti Documentation
 =====================
 
 A python module for interacting and receiving data from video/audio streaming
@@ -9,13 +9,10 @@ websites.
    :maxdepth: 2
    :caption: Contents:
 
-   intro
-   main
-   web_api
-   utils
-   modules
+   userdoc
+   devdoc
 
-Indices and tables
+Indices and tables.
 ==================
 
 * :ref:`genindex`
