@@ -12,6 +12,9 @@ import sys
 import urllib3
 import urllib3.util
 
+import utils
+from download import Download
+
 PATH = os.path.dirname(__file__)
 sys.path.append(PATH)
 PLUGIN_FOLDER = os.path.join(PATH, 'plugins')
@@ -87,19 +90,17 @@ def _filter_stream(*args):
     return True
 
 
-def _make_filename(title):
-    """ Create a descriptive and safe filename from the title.
-
-    :param str title: the title of the media object.
-    :return: the filename.
-    :rtype: str
-    """
-    return re.sub('[^a-zA-z0-9]+', '_', title)
-
-
 @module
 def channel(plugin, url):
     raise NotImplementedError
+
+
+def download(media_url):
+    streams_dict = streams(media_url)
+    md = metadata(media_url)
+    fn = utils.make_filename(md['title'])
+    d = Download(streams_dict, f'/tmp/{fn}', utils.merge_files)
+    return d
 
 
 @module
@@ -144,31 +145,33 @@ def search(plugin, query_or_url, **kwargs):
     return methods[request](query_or_url, **kwargs)
 
 
-def stream_urls(media_url, quality='1080p', container='webm'):
-    """ Given a media url, return the absolute stream files.
+def streams(media_url, quality='720p', container='webm'):
+    """ Given a media url, return the stream dicts.
 
     :param str media_url: the media url.
     :param str quality: the stream quality (concerns only video files).
                           Default: '1080p'.
     :param str container: the container format. Usually either mp4 or webm.
                             Default: 'webm'.
-    :return: the video url and the audio url.
-    :rtype: tuple(str, str)
+    :return: the audio and video dicts.
+    :rtype: tuple(dict, dict)
     """
     item = metadata(media_url)
-    streams = item['streams']
-    video_url, audio_url = '', ''
-    video_streams = list(filter(functools.partial(_filter_stream, 'video', quality, container), streams))
+    stream_dicts = item['streams']
+    video_stream, audio_stream = {}, {}
+    video_streams = list(filter(functools.partial(_filter_stream, 'video', quality, container), stream_dicts))
     if video_streams:
-        video_url = video_streams[0]['url']
-    audio_streams = list(filter(functools.partial(_filter_stream, 'audio', container), streams))
+        video_stream = video_streams[0]
+    else:
+        video_stream = item['streams'][0]
+    audio_streams = list(filter(functools.partial(_filter_stream, 'audio', container), stream_dicts))
     if audio_streams:
         best = audio_streams[0]
         for stream in audio_streams:
             if int(stream['quality']) > int(best['quality']):
                 best = stream
-        audio_url = best['url']
-    return audio_url, video_url
+        audio_stream = best
+    return audio_stream, video_stream
 
 
 @module

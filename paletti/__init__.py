@@ -8,4 +8,4 @@ __email__ = '37776145+Fledermann@users.noreply.github.com'
 __status__ = 'Prototype'
 
 from paletti.main import get_plugins_from_repo
-from paletti.web_api import metadata, search, stream_urls
+from paletti.web_api import download, metadata, search, streams

@@ -1,124 +1,48 @@
 #!/usr/bin/env python
 
-import threading
-import urllib3
+import os
+import pathlib
+import re
+import subprocess
 
 
-class Downloader:
-    """ Download a file from the web and start a background thread.
+def make_filename(title):
+    """ Create a descriptive and safe filename from the title.
 
-    :param url: the url of the file to download.
-    :type url: str
-    :param path: the full path where the output file is written.
-    :type path: str
-    :param dash_params: parameter for downloading sequential DASH streams.
-                        if none is provided, download normally (default=False).
-    :type dash_params: dict
-    :ivar status: holds current information about the download progress for
-                  external access. Keys are: "active", "filesize", "path",
-                  "url" and "progress".
-    :type status: dict
+    :param str title: the title of the media object.
+    :return: the filename.
+    :rtype: str
     """
-    def __init__(self, url, path, dash_params=False):
-        filesize = self._analyze(url)
-        self.dash_params = dash_params
-        self.filesize = filesize
-        self.path = path
-        self.progress = 0
-        self.status = 'idle'
-        self.thread = None
-        self.url = url
+    return re.sub('[^a-zA-z0-9]+', '_', title)
 
-    @staticmethod
-    def _analyze(url):
-        """ Get the filesize.
 
-        :param url: the url of the file.
-        :type url: str
-        :returns: the filesize in bytes.
-        :rtype: int
-        """
-        http = urllib3.PoolManager()
-        response = http.request('GET', url, preload_content=False)
-        filesize = int(response.headers['Content-Length'])
-        return filesize
+def merge_files(path):
+    """ Merge video and audio files after downloading.
 
-    def _fetch_file(self, callback=None):
-        """ Start downloading the content of the file. While doing so,
-        update the `status` dictionary so it can be accessed externally.
-
-        :param callback: the optional callback function which is called after
-                         successfully finishing the download. It will be
-                         called with `self.status` as the only paramter.
-        :type callback: callable
-        :returns: None
-        """
-        self.status = 'active'
-        http = urllib3.PoolManager()
-        response = http.request('GET', self.url, preload_content=False)
-        for chunk in response.stream(1024):
-            if self.status != 'active':
-                break
-            with open(self.path, 'ab') as f:
-                f.write(chunk)
-            self.progress += 1024
-        self.status = 'finished'
-        if callback:
-            callback(self)
-        return
-
-    def _fetch_file_dash(self, callback=None):
-        """ Start downloading the content of the DASH file. While doing so,
-        update the `status` dictionary so it can be accessed externally.
-        This should always be used instead of `_fetch_file` if the resource
-        is a DASH stream, because many content providers throttle a regular,
-        direct download after a few MiB.
-
-        :param callback: the optional callback function which is called after
-                         successfully finishing the download. It will be
-                         called with `self.status` as the only paramter.
-        :type callback: callable
-        :returns: None
-        """
-        self.status = 'active'
-        http = urllib3.PoolManager()
-        dash_chunk_size = 10_485_760
-        chunk_start = 0
-        while self.progress < self.filesize:
-            chunk_end = chunk_start + dash_chunk_size - 1
-            dash_url = f'{self.url}&{self.dash_params["key"]}={chunk_start}' \
-                       f'{self.dash_params["format"]}{chunk_end}'
-            response = http.request('GET', dash_url, preload_content=False)
-            with open(self.path, 'ab') as f:
-                for chunk in response.stream(1024):
-                    if not self.status != 'active':
-                        return
-                    f.write(chunk)
-                    self.progress += 1024
-            chunk_start = chunk_end + 1
-        self.status = 'finished'
-        if callback:
-            callback(self)
-        return
-
-    def cancel(self):
-        """ Cancel the download immediately.
-
-        :returns: None
-        """
-        self.status = 'cancelled'
-        self.thread.join()
-        return None
-
-    def start(self):
-        """ Start the file download as a background thread.
-
-        :returns: None
-        """
-        if self.dash_params:
-            self.thread = threading.Thread(target=self._fetch_file_dash)
-            self.thread.start()
-        else:
-            self.thread = threading.Thread(target=self._fetch_file)
-            self.thread.start()
-        return None
+    :param str path: the base path, minus file extensions.
+    :return: None
+    """
+    p = pathlib.Path(path)
+    folder = p.parent
+    filename = p.parts[-1]
+    audio, video = '', ''
+    for item in os.listdir(folder):
+        try:
+            name, container, type_ = item.split('.')
+        except ValueError:
+            continue
+        if name == filename:
+            out_file = folder / f'{filename}.{container}'
+            if type_ == 'audio':
+                audio = folder / item
+            if type_ == 'video':
+                video = folder / item
+    if audio and video:
+        subprocess.call(f'ffmpeg -i {audio} -i {video} -c:a copy -c:v copy {out_file}',
+                        shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        os.remove(audio)
+        os.remove(video)
+    elif audio:
+        os.rename(audio, out_file)
+    elif video:
+        os.rename(video, out_file)

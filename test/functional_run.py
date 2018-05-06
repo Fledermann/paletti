@@ -44,7 +44,7 @@ def report_error(reason, **kwargs):
     for debugging.
 
     :param str reason: the reason for the error.
-    :param str kwargs: any number of kwargs, which will be printed out.
+    :param kwargs: any number of kwargs, which will be printed out.
     :return: None
     """
     func_name = inspect.stack()[1][3]
@@ -53,6 +53,12 @@ def report_error(reason, **kwargs):
     for key, value in kwargs.items():
         print(f'{key}: {value}')
     print('#' * 40)
+
+
+@threaded
+def test_download(url):
+    d = paletti.download(url)
+    d.start()
 
 
 @threaded
