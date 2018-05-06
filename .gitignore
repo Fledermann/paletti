@@ -12,3 +12,4 @@ plugins/
 
 # Private notes etc.
 dev-local/
+test.py

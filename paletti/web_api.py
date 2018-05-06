@@ -110,7 +110,7 @@ def channel(plugin, url):
     raise NotImplementedError
 
 
-def download(media_url, audio=True, video=True, **kwargs):
+def download(media_url, folder, audio=True, video=True, **kwargs):
     streams_dict = streams(media_url, **kwargs)
     md = metadata(media_url)
     fn = utils.make_filename(md['title'])
@@ -121,7 +121,8 @@ def download(media_url, audio=True, video=True, **kwargs):
         streams_dict[1] = None
     if not audio:
         streams_dict[0] = None
-    d = Download(streams_dict, f'/tmp/{fn}', utils.merge_files)
+    filepath = os.path.join(folder, fn)
+    d = Download(streams_dict, f'{filepath}', utils.merge_files)
     return d
 
 

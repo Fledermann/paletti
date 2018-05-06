@@ -61,11 +61,11 @@ class Download:
             response = http.request('GET', dash_url, preload_content=False)
             filepath = f'{self.output}.{stream["container"]}.{stream["type"]}.{stream["codec"]}'
             with open(filepath, 'ab') as f:
-                for chunk in response.stream(1024):
+                for chunk in response.stream(1024*128):
                     if self.status != 'active':
                         return
                     f.write(chunk)
-                    self.progress += 1024
+                    self.progress += 1024*128
             chunk_start = chunk_end + 1
         self.status = 'finished'
         self.trigger_pp()
