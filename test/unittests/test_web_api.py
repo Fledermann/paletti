@@ -9,9 +9,8 @@ import unittest
 from paletti import web_api
 
 
-class TestSiteAPI(unittest.TestCase):
+class TestWebAPI(unittest.TestCase):
 
-    def test__make_filename(self):
+    def test_user(self):
         # The result should be a dict.
-        fn = web_api._make_filename('8Ä;ä0ß33nfkjdksnad')
-        self.assertIsInstance(fn, str)
+        self.assertRaises(NotImplementedError, lambda: web_api.user('youtube', 'bar'))

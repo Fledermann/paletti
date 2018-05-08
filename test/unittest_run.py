@@ -9,10 +9,12 @@ import unittest
 import sys
 
 root = pathlib.Path(__file__).resolve().parent.parent
+tests = pathlib.Path(__file__).parent / 'unittests'
 sys.path.append(str(root))
+sys.path.append(str(tests))
 
-from unittests import test_utils
-from unittests import test_web_api
+import test_utils
+import test_web_api
 
 loader = unittest.TestLoader()
 suite = unittest.TestSuite()
