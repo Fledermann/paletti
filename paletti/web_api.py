@@ -8,12 +8,15 @@ import importlib
 import os
 import pkgutil
 import sys
+from tempfile import gettempdir
+from pathlib import Path
+
 import urllib3
 import urllib3.util
-
 import utils
 from download import Download
 
+urllib3.disable_warnings()
 PATH = os.path.dirname(__file__)
 sys.path.append(PATH)
 PLUGIN_FOLDER = os.path.join(PATH, 'plugins')
@@ -36,6 +39,7 @@ def cache(func):
         media_item = func(*args)
         cache_list.append(media_item)
         return media_item
+
     return wrapper
 
 
@@ -67,14 +71,15 @@ def module(func):
                 mod = item['module']
                 break
         else:
-                raise ModuleNotFoundError
+            raise ModuleNotFoundError
         if not args:
-            args = (plugin_name_or_url, )
+            args = (plugin_name_or_url,)
         return func(mod, *args, **kwargs)
+
     return wrapper
 
 
-def _filter_stream(streams, type_, quality, container):
+def _filter_stream(streams_, type_, quality, container):
     """ Look up the properties of the video streams and filter by keyword
     arguments. A certain level of interpretation is used, if the exact stream
     is not found. It will only return None if the container format
@@ -85,12 +90,12 @@ def _filter_stream(streams, type_, quality, container):
     :return: True if all values were present, False otherwise.
     :rtype: bool
     """
-    streams = sorted(streams, key=lambda k: k['quality_int'], reverse=True)
-    result = [s for s in streams if s['type'] == type_]
+    streams_ = sorted(streams_, key=lambda k: k['quality_int'], reverse=True)
+    result = [s for s in streams_ if s['type'] == type_]
     if not result:
         if type_ == 'audio':
             return None
-        result = [s for s in streams if s['type'] == 'audio+video']
+        result = [s for s in streams_ if s['type'] == 'audio+video']
     result_ = [s for s in result if s['container'] == container]
     if not result_:
         print(f'Container {container} not available, choosing another one.')
@@ -106,11 +111,34 @@ def _filter_stream(streams, type_, quality, container):
 
 
 @module
+def _playlist(plugin, media_url, **kwargs):
+    """ Search for videos in a playlist.
+
+    :param module plugin: the plugin.
+    :param str media_url: the media url.
+    :param int results: the number of results to return (0 = all).
+    :return: the search result.
+    :rtype: list(dict)
+    """
+    return plugin.playlist(media_url, **kwargs)
+
+
+@module
 def channel(plugin, url):
     raise NotImplementedError
 
 
 def download(media_url, folder, audio=True, video=True, subtitles=False, **kwargs):
+    """ Download the streams for the media url.
+
+    :param str media_url: the url.
+    :param str folder: the local folder for the output.
+    :param bool audio: download audio.
+    :param bool video: download video.
+    :param bool subtitles: download subtitles.
+    :param kwargs: additional video properties (see `streams`).
+    :return: a `Download` instance.
+    """
     streams_dict = streams(media_url, **kwargs)
     md = metadata(media_url)
     fn = utils.make_filename(md['title'])
@@ -132,6 +160,11 @@ def download(media_url, folder, audio=True, video=True, subtitles=False, **kwarg
 
 
 @module
+def get_subtitles(plugin, media_url, lang='en'):
+    return plugin.get_subtitles(media_url, lang)
+
+
+@module
 @cache
 def metadata(plugin, media_url):
     """ Fetch information for the specified media url and return a
@@ -145,11 +178,6 @@ def metadata(plugin, media_url):
 
 
 @module
-def playlist(plugin, media_url, **kwargs):
-    return plugin.playlist(media_url, **kwargs)
-
-
-@module
 def search(plugin, query_or_url, **kwargs):
     """ Perform a search and return the result. The result will be a list
     of dicts, each dict containing some basic data for the video like
@@ -158,15 +186,14 @@ def search(plugin, query_or_url, **kwargs):
     ot may be the url of a channel or playlist (where the plugin in
     determined automatically).
 
-    :param str plugin: the plugin.
+    :param module plugin: the plugin.
     :param str query_or_url: the search query.
-    :keyword int results: the number of search results (default value depends on
-                          the plugin).
+    :keyword int results: the number of search results (0 = all).
     :returns: the search result.
-    :rtype: list
+    :rtype: list(dict)
     """
     methods = {'search_query': plugin.search,
-               'playlist': playlist,
+               'playlist': _playlist,
                'channel': channel,
                'user': user}
     request = plugin.parse_userinput(query_or_url)
@@ -191,9 +218,28 @@ def streams(media_url, quality='best', container='webm'):
     return [audio_stream, video_stream]
 
 
-@module
-def get_subtitles(plugin, media_url, lang='en'):
-    return plugin.get_subtitles(media_url, lang)
+def thumbnail(media_url, size='small'):
+    """ Download the thumbnail and return the filepath.
+    
+    :param module plugin: the plugin.
+    :param str media_url: the media url.
+    :param str size: the thumbnail size, either 'small' or 'big'. 
+    :return: the local filepath.
+    ;rtype: str
+    """
+    item = metadata(media_url)
+    thumb_url = item[f'thumbnail_{size}']
+
+    folder = gettempdir()
+    suffix = Path(thumb_url).suffix
+    fname = f'{item["id"]}{suffix}'
+    filepath = str(Path(folder) / Path(fname))
+
+    http = urllib3.PoolManager()
+    r = http.request('GET', thumb_url)
+    with open(filepath, 'wb') as f:
+        f.write(r.data)
+    return filepath
 
 
 @module
