@@ -13,3 +13,7 @@ plugins/
 # Private notes etc.
 dev-local/
 test.py
+
+# No locally generated docs
+docs/
+!docs/source
