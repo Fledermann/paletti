@@ -58,13 +58,14 @@ def report_error(reason, **kwargs):
 
 @threaded
 def test_download(url):
-    d = paletti.download(url)
+    d = paletti.download(url, '/tmp')
     d.start()
     while True:
         time.sleep(1)
         if d.status != 'active':
             break
-        print(f'{d.output:.20s}...: {d.progress/1024:7.0f} of {d.filesize/1024:7.0f} kb.')
+        print(f'\r{d.output:.20s}...: {d.progress/1024:7.0f} of {d.filesize/1024:7.0f} kb.', end='')
+    print('')
 
 
 @threaded
