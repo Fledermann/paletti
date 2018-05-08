@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 import os
-import urllib.parse
-import urllib3.util
 import sys
+import urllib.parse
+
+import urllib3.util
 
 PATH = os.path.dirname(__file__)
 sys.path.append(PATH)
