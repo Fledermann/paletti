@@ -13,4 +13,4 @@ class TestWebAPI(unittest.TestCase):
 
     def test_user(self):
         # The result should be a dict.
-        self.assertRaises(NotImplementedError, lambda: web_api.user('youtube', 'bar'))
+        self.assertRaises(ModuleNotFoundError, lambda: web_api.user('foo', 'bar'))
