@@ -1,5 +1,7 @@
 .. image:: https://travis-ci.org/Fledermann/paletti.svg?branch=master
     :target: https://travis-ci.org/Fledermann/paletti
+.. image:: https://readthedocs.org/projects/paletti/badge/?version=latest
+    :target: https://paletti.readthedocs.io
 .. image:: https://codecov.io/gh/Fledermann/paletti/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/Fledermann/paletti
   
