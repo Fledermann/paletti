@@ -5,6 +5,6 @@ install:
   - pip install codecov
 script:
   - python "test/unittest_run.py"
-  - coverage run "test/unittest.run.py"
+  - coverage run "test/unittest_run.py"
 after_success:
   - codecov
