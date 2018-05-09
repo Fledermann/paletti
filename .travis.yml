@@ -1,5 +1,10 @@
 language: python
 python:
   - "3.6"
+install:
+  - pip install codecov
 script:
   - python "test/unittest_run.py"
+  - coverage run "test/unittest.run.py"
+after_success:
+  - codecov
