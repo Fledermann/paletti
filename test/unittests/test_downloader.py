@@ -15,10 +15,13 @@ class TestDownloader(unittest.TestCase):
 
     def setUp(self):
 
+        # Mock the download stream. We're pretending to download a file
+        # of 132000 bytes, which means one full and on partial chunk
+        # for urllib3.request.stream(1024*128).
         def mock_stream():
-            for i in range(10):
-                time.sleep(0.01)
-                yield i
+            time.sleep(0.02)
+            yield b' ' * (1024*128-33)
+            yield b' ' * 895
 
         streams = ({},
                    {'url': 'http://example.com/audio.mp3',
@@ -44,6 +47,9 @@ class TestDownloader(unittest.TestCase):
         self.assertEqual(self.dl.status, 'active')
         self.assertEqual(self.dl.filesize, 132000)
         self.assertIsInstance(repr(self.dl), str)
+        while self.dl.status == 'active':
+            pass
+        self.assertEqual(self.dl.progress, self.dl.filesize)
 
     def test_cancel(self):
         self.dl.cancel()

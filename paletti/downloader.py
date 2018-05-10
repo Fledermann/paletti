@@ -3,6 +3,7 @@
 """ The Download class.
 """
 
+import sys
 import threading
 import urllib3
 
@@ -52,6 +53,7 @@ class Download:
             return None
         http = urllib3.PoolManager()
         dash_chunk_size = 10_485_760
+        dl_chunk_size = 131_072
         chunk_start = 0
         dash_params = {'key': 'range', 'format': '-'}
         while self.progress < self.filesize:
@@ -61,11 +63,16 @@ class Download:
             response = http.request('GET', dash_url, preload_content=False)
             filepath = f'{self.output}.{stream["container"]}.{stream["type"]}.{stream["codec"]}'
             with open(filepath, 'ab') as f:
-                for chunk in response.stream(1024*128):
+                for chunk in response.stream(dl_chunk_size):
                     if self.status != 'active':
                         return
                     f.write(chunk)
-                    self.progress += 1024*128
+                    # Check whether the chunk was smaller than our chunk size,
+                    # to get the correct progress for the last iteration.
+                    if sys.getsizeof(chunk_start) == dl_chunk_size:
+                        self.progress += dl_chunk_size
+                    else:
+                        self.progress += sys.getsizeof(chunk)
             chunk_start = chunk_end + 1
         self.status = 'finished'
         self.trigger_pp()
