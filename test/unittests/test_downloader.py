@@ -11,7 +11,7 @@ from unittest import mock
 from paletti import downloader
 
 
-class TestDownload(unittest.TestCase):
+class TestDownloader(unittest.TestCase):
 
     def setUp(self):
 
@@ -28,7 +28,7 @@ class TestDownload(unittest.TestCase):
                     'container': 'wbm'})
         outfile = '/tmp/foobar'
         data = b''
-        headers = {'Content-Length': '2048'}
+        headers = {'Content-Length': '132000'}
         stream = mock_stream()
         downloader.urllib3.PoolManager = mock.Mock()
         downloader.urllib3.PoolManager.return_value.request.return_value.data = data
@@ -42,7 +42,8 @@ class TestDownload(unittest.TestCase):
     def test_start(self, mock_open):
         self.dl.start()
         self.assertEqual(self.dl.status, 'active')
-        self.assertEqual(self.dl.filesize, 2048)
+        self.assertEqual(self.dl.filesize, 132000)
+        self.assertIsInstance(repr(self.dl), str)
 
     def test_cancel(self):
         self.dl.cancel()
