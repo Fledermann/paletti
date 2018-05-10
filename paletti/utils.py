@@ -48,3 +48,4 @@ def merge_files(path):
     elif video:
         out_file = folder / f'{filename}.{codec}'
         os.rename(video, out_file)
+    return str(out_file)
