@@ -20,8 +20,10 @@ def get_plugins_from_repo(url, branch='master', force=False):
     :type branch: str
     :param force: if true, overwrite local files.
     :type force: bool
-    :return: None
+    :return: the written files.
+    :rtype: list(str)
     """
+    local_files_written = []
     url = url.replace('.git', '/')
     host = 'raw.githubusercontent.com'
     parsed_url = urllib3.util.parse_url(url)
@@ -39,6 +41,5 @@ def get_plugins_from_repo(url, branch='master', force=False):
             r = http.request('GET', file_url)
             with open(file_local, 'wb') as f:
                 f.write(r.data)
-            print(f'Wrote {file_local}')
-        else:
-            print(f'File {file_local} already exists, not overwriting.')
+            local_files_written.append(file_local)
+    return local_files_written

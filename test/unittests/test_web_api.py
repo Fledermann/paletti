@@ -55,14 +55,15 @@ class TestWebAPI(unittest.TestCase):
         web_api.Download = mock.Mock()
         self.assertIsInstance(web_api.download('https://example.com', '/tmp'), mock.Mock)
 
-    def test_thumbnail(self):
-        # TODOD: mock file write.
+    @mock.patch('builtins.open', create=False)
+    def test_thumbnail(self, mock_open):
         md = {'id': '12345', 'thumbnail_small': 'http://example.com/thumb.jpg'}
         web_api.metadata = mock.Mock(return_value=md)
         web_api.urllib3.PoolManager = mock.Mock()
         web_api.urllib3.PoolManager.return_value.request.return_value.data = b'12345'
 
-        self.assertEqual(web_api.thumbnail('http://example.com/123'), '/tmp/12345.jpg')
+        with mock.patch('web_api.open', mock.mock_open()):
+            self.assertEqual(web_api.thumbnail('http://example.com/123'), '/tmp/12345.jpg')
 
     def test_user(self):
         url = 'http://example.com/123'
