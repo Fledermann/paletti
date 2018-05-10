@@ -13,9 +13,17 @@ from paletti import utils
 class TestUtils(unittest.TestCase):
 
     def test_make_filename(self):
-        self.assertIsInstance(utils.make_filename('aw iw))(""23+*.,!!'), str)
+        self.assertEqual(utils.make_filename('aw iw))(""23+*.,!!'), 'aw_iw_23_')
 
     def test_merge_files(self):
-        utils.os.listdir = mock.Mock(return_value=['foo.webm.video.vp9'])
+        mock_listdir = ['foo.webm.video.vp9', 'bar.mp4.audio.aac',
+                        'bar.mp4.video.ac1', 'baz.webm.audio.opus',
+                        'otherfile.txt', 'something.log.2.old']
+        utils.os.listdir = mock.Mock(return_value=mock_listdir)
         utils.os.rename = mock.Mock()
-        self.assertIsInstance(utils.merge_files('/tmp/foo'), str)
+        utils.os.remove = mock.Mock()
+        utils.subprocess.call = mock.Mock()
+        self.assertEqual(utils.merge_files('foo'), 'foo.vp9')
+        self.assertEqual(utils.merge_files('bar'), 'bar.mp4')
+        self.assertEqual(utils.merge_files('baz'), 'baz.opus')
+
