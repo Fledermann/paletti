@@ -10,8 +10,9 @@ __pycache__/
 *$py.class
 
 # No plugins, except for the example file
-plugins/
-!plugins/_example_plugin/
+!paletti/plugins/
+paletti/plugins/*
+!paletti/plugins/_example_plugin/
 
 # Private notes etc.
 dev-local/
