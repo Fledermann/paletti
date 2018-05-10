@@ -14,7 +14,7 @@ from pathlib import Path
 import urllib3
 import urllib3.util
 import utils
-from download import Download
+from downloader import Download
 
 urllib3.disable_warnings()
 PATH = os.path.dirname(__file__)
