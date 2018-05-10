@@ -98,8 +98,11 @@ def _filter_stream(streams_, type_, quality, container):
         result = [s for s in streams_ if s['type'] == 'audio+video']
     result_ = [s for s in result if s['container'] == container]
     if not result_:
-        print(f'Container {container} not available, choosing another one.')
-        result_ = result
+        if type_ == 'video':
+            result_ = [s for s in streams_ if s['type'] == 'audio+video']
+        if not result_:
+            print(f'Container {container} not available, choosing another one.')
+            return None
     best_available = result_[0]['quality']
     if quality == 'best':
         result__ = [s for s in result_ if s['quality'] == best_available]

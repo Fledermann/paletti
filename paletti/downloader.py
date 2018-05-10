@@ -69,7 +69,7 @@ class Download:
                     f.write(chunk)
                     # Check whether the chunk was smaller than our chunk size,
                     # to get the correct progress for the last iteration.
-                    if sys.getsizeof(chunk_start) == dl_chunk_size:
+                    if sys.getsizeof(chunk) == dl_chunk_size:
                         self.progress += dl_chunk_size
                     else:
                         self.progress += sys.getsizeof(chunk)

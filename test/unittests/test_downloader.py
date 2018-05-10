@@ -19,8 +19,8 @@ class TestDownloader(unittest.TestCase):
         # of 132000 bytes, which means one full and on partial chunk
         # for urllib3.request.stream(1024*128).
         def mock_stream():
-            time.sleep(0.02)
             yield b' ' * (1024*128-33)
+            time.sleep(0.02)
             yield b' ' * 895
 
         streams = ({},
@@ -39,10 +39,12 @@ class TestDownloader(unittest.TestCase):
         downloader.urllib3.PoolManager.return_value.request.return_value.headers = headers
 
         self.dl = downloader.Download(streams, outfile, mock.Mock)
+        self.dl2 = downloader.Download(streams, outfile, mock.Mock)
         self.assertEqual(self.dl.status, 'idle')
 
     @mock.patch('builtins.open', create=False)
     def test_start(self, mock_open):
+        # Start a download, check it's properties, and wait for it to finish.
         self.dl.start()
         self.assertEqual(self.dl.status, 'active')
         self.assertEqual(self.dl.filesize, 132000)
@@ -52,5 +54,7 @@ class TestDownloader(unittest.TestCase):
         self.assertEqual(self.dl.progress, self.dl.filesize)
 
     def test_cancel(self):
-        self.dl.cancel()
-        self.assertEqual(self.dl.status, 'cancelled')
+        # Start a new download and cancel it immediately.
+        self.dl2.start()
+        self.dl2.cancel()
+        self.assertEqual(self.dl2.status, 'cancelled')
