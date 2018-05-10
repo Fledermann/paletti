@@ -1,9 +1,49 @@
 #!/usr/bin/env python
 
+import importlib
 import os
 import pathlib
 import re
 import subprocess
+import sys
+
+PATH = os.path.dirname(__file__)
+sys.path.append(PATH)
+PLUGIN_FOLDER = os.path.join(PATH, 'plugins')
+
+
+def find_modules(type_):
+    plugin_list = []
+    plugin_folder = pathlib.Path(PLUGIN_FOLDER)
+    directories = os.listdir(plugin_folder)
+    for d in directories:
+        if str(d).startswith('_'):
+            continue
+        subfolder = plugin_folder / d
+        sys.path.append(str(subfolder))
+        files = [f for f in os.listdir(subfolder) if not f.startswith('_')]
+        for plugin_file in files:
+            if type_ == 'plugins':
+                if plugin_file.startswith('test_'):
+                    continue
+                name = plugin_file.split('.')[0]
+                mod = importlib.import_module(name)
+                plugin_data = {'name': name,
+                               'module': mod,
+                               'hosts': mod.HOSTS,
+                               'type': mod.STREAM_TYPE}
+                plugin_list.append(plugin_data)
+            if type_ == 'tests':
+                if not plugin_file.startswith('test_'):
+                    continue
+                name = plugin_file.split('.')[0]
+                mod = importlib.import_module(name)
+                plugin_data = {'name': name,
+                               'plugin': subfolder.parts[-1],
+                               'type': name.replace('test_', ''),
+                               'module': mod}
+                plugin_list.append(plugin_data)
+    return plugin_list
 
 
 def make_filename(title):

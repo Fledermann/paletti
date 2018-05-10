@@ -18,18 +18,17 @@ class TestWebAPI(unittest.TestCase):
         # We need some set up to mock the decorators appropiately.
         # Throughout these tests, our mocked plugin will be called
         # 'cool_plugin' and its website is 'http://example.com'
-        mod_file = namedtuple('mod_file', ['name'])
         module = namedtuple('module', ['HOSTS', 'STREAM_TYPE', 'playlist',
-                                       'search', 'get_metadata', 'parse_userinput'])
-        cool_plugin = mod_file(name='cool_plugin')
+                                       'search', 'get_metadata',
+                                       'parse_userinput'])
         parse_ui = mock.Mock()
         parse_ui.return_value = 'search_query'
         mod = module(HOSTS=['example.com'], STREAM_TYPE='audio+video',
                      playlist=mock.Mock(), search=mock.Mock(),
                      get_metadata=mock.Mock(), parse_userinput=parse_ui)
-        mock_pkgs = [cool_plugin]
-        web_api.pkgutil.walk_packages = mock.Mock(return_value=mock_pkgs)
-        web_api.importlib.import_module = mock.Mock(return_value=mod)
+        mock_pkgs = {'name': 'cool_plugin', 'module': mod,
+                     'hosts': ['example.com'], 'type': 'audio+video'}
+        web_api.utils.find_modules = mock.Mock(return_value=[mock_pkgs])
 
         def kill_patches():
             mock.patch.stopall()
@@ -73,7 +72,8 @@ class TestWebAPI(unittest.TestCase):
         web_api.streams = mock.Mock(return_value={'title': 'mock'})
         web_api.metadata = mock.Mock(return_value={'title': 'mock'})
         web_api.Download = mock.Mock()
-        self.assertIsInstance(web_api.download('https://example.com', '/tmp'), mock.Mock)
+        self.assertIsInstance(web_api.download('https://example.com', '/tmp'),
+                              mock.Mock)
 
     def test_metadata(self):
         md = web_api.metadata('http://example.com/123')
@@ -89,7 +89,7 @@ class TestWebAPI(unittest.TestCase):
 
     def test_search(self):
         result = web_api.search('cool_plugin', 'How to shave a ferret')
-
+        self.assertIsNotNone(result)
 
     @mock.patch('builtins.open', create=False)
     def test_thumbnail(self, mock_open):

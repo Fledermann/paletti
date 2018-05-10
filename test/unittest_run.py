@@ -13,11 +13,13 @@ tests = pathlib.Path(__file__).parent / 'unittests'
 sys.path.append(str(root))
 sys.path.append(str(tests))
 
+import paletti.utils
 import test_downloader
 import test_main
 import test_utils
 import test_web_api
 
+plugin_tests = paletti.utils.find_modules('tests')
 loader = unittest.TestLoader()
 suite = unittest.TestSuite()
 

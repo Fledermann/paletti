@@ -4,10 +4,8 @@
 websites. """
 
 import functools
-import importlib
 import os
-import pkgutil
-import sys
+import subprocess
 from tempfile import gettempdir
 from pathlib import Path
 
@@ -17,9 +15,6 @@ import utils
 from downloader import Download
 
 urllib3.disable_warnings()
-PATH = os.path.dirname(__file__)
-sys.path.append(PATH)
-PLUGIN_FOLDER = os.path.join(PATH, 'plugins')
 
 
 def cache(func):
@@ -50,18 +45,7 @@ def module(func):
     :return: the wrapper.
     :rtype: callable
     """
-    plugin_list = []
-    packages = pkgutil.walk_packages([PLUGIN_FOLDER])
-    for plugin in packages:
-        folder = os.path.normpath(PLUGIN_FOLDER).split(os.sep)[-1]
-        full_package_name = f'{folder}.{plugin.name}'
-        mod = importlib.import_module(full_package_name)
-        if not plugin.name.startswith('_'):
-            plugin_data = {'name': plugin.name,
-                           'module': mod,
-                           'hosts': mod.HOSTS,
-                           'type': mod.STREAM_TYPE}
-            plugin_list.append(plugin_data)
+    plugin_list = utils.find_modules('plugins')
 
     @functools.wraps(func)
     def wrapper(plugin_name_or_url, *args, **kwargs):
@@ -127,6 +111,11 @@ def _playlist(plugin, media_url, **kwargs):
 
 
 @module
+def _subtitles(plugin, media_url, lang='en'):
+    return plugin.get_subtitles(media_url, lang)
+
+
+@module
 def channel(plugin, url):
     raise NotImplementedError
 
@@ -154,17 +143,12 @@ def download(media_url, folder, audio=True, video=True, subtitles=False, **kwarg
         streams_dict[0] = None
     filepath = os.path.join(folder, fn)
     if subtitles:
-        subs = get_subtitles(media_url, lang=subtitles)
+        subs = _subtitles(media_url, lang=subtitles)
         if subs:
             with open(f'{filepath}.srt', 'w') as f:
                 f.write(subs)
     d = Download(streams_dict, f'{filepath}', utils.merge_files)
     return d
-
-
-@module
-def get_subtitles(plugin, media_url, lang='en'):
-    return plugin.get_subtitles(media_url, lang)
 
 
 @module
@@ -178,6 +162,14 @@ def metadata(plugin, media_url):
     :rtype: dict
     """
     return plugin.get_metadata(media_url)
+
+
+def play(media_url, **kwargs):
+    audio, video = streams(media_url, **kwargs)
+    audio_stream = audio['url']
+    video_stream = video['url']
+    cmd = f'mpv "{video_stream}" --audio-file "{audio_stream}"'
+    subprocess.Popen(cmd, shell=True)#, stdout=subprocess.PIPE)
 
 
 @module
