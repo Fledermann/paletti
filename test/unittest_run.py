@@ -28,5 +28,10 @@ suite.addTests(loader.loadTestsFromModule(test_main))
 suite.addTests(loader.loadTestsFromModule(test_utils))
 suite.addTests(loader.loadTestsFromModule(test_web_api))
 
+# Add the plugin tests
+for pt in plugin_tests:
+    if pt['type'] == 'unittest':
+        suite.addTest(loader.loadTestsFromModule(pt['module']))
+
 runner = unittest.TextTestRunner(verbosity=3)
 result = runner.run(suite)

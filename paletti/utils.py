@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import importlib
+import importlib.util
 import os
 import pathlib
 import re
@@ -17,17 +18,20 @@ def find_modules(type_):
     plugin_folder = pathlib.Path(PLUGIN_FOLDER)
     directories = os.listdir(plugin_folder)
     for d in directories:
-        if str(d).startswith('_'):
+        if str(d).startswith('_') and (type_ != 'tests'):
             continue
         subfolder = plugin_folder / d
-        sys.path.append(str(subfolder))
-        files = [f for f in os.listdir(subfolder) if not f.startswith('_')]
+        # Temporarily add the folder to sys.path so the tests will find
+        # everything.
+        if str(subfolder) not in sys.path:
+            sys.path.insert(0, str(subfolder))
+        files = [f for f in os.listdir(subfolder) if not f.startswith('__')]
         for plugin_file in files:
             if type_ == 'plugins':
                 if plugin_file.startswith('test_'):
                     continue
                 name = plugin_file.split('.')[0]
-                mod = importlib.import_module(name)
+                mod = load_module_from_file(subfolder / plugin_file)
                 plugin_data = {'name': name,
                                'module': mod,
                                'hosts': mod.HOSTS,
@@ -37,13 +41,23 @@ def find_modules(type_):
                 if not plugin_file.startswith('test_'):
                     continue
                 name = plugin_file.split('.')[0]
-                mod = importlib.import_module(name)
+                importlib.invalidate_caches()
+                mod = load_module_from_file(subfolder / plugin_file)
                 plugin_data = {'name': name,
                                'plugin': subfolder.parts[-1],
                                'type': name.replace('test_', ''),
                                'module': mod}
                 plugin_list.append(plugin_data)
+        while str(subfolder) in sys.path:
+            sys.path.remove(str(subfolder))
     return plugin_list
+
+
+def load_module_from_file(path):
+    spec = importlib.util.spec_from_file_location('name', path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def make_filename(title):

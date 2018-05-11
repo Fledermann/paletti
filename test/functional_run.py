@@ -12,12 +12,13 @@ import sys
 import threading
 import time
 
-from functional.cases import test_cases
+import functional.cases
 
 root = pathlib.Path(__file__).resolve().parent.parent
 sys.path.append(str(root))
 
 import paletti
+import paletti.utils
     
 
 def threaded(func):
@@ -88,5 +89,20 @@ def test_search(query):
 
 
 if __name__ == '__main__':
-    for test, values in test_cases.items():
-        locals()[test](values)
+    test_subject = 'all'
+    try:
+        test_subject = sys.argv[1]
+    except IndexError:
+        pass
+
+    # Find and add all functional tests to a list.
+    test_cases = dict(paletti=functional.cases.test_cases)
+    plugin_tests = paletti.utils.find_modules('tests')
+    for pt in plugin_tests:
+        if pt['type'] == 'functional':
+            test_cases[pt['plugin']] = pt['module'].test_cases
+
+    for subject, case in test_cases.items():
+        if subject == test_subject or test_subject == 'all':
+            for test, values in case.items():
+                locals()[test](values)
