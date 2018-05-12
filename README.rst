@@ -1,3 +1,4 @@
+.. image:: https://github.com/Fledermann/paletti/raw/master/etc/logo.png
 .. image:: https://travis-ci.org/Fledermann/paletti.svg?branch=master
     :target: https://travis-ci.org/Fledermann/paletti
 .. image:: https://readthedocs.org/projects/paletti/badge/?version=latest
