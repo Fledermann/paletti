@@ -9,6 +9,8 @@
 paletti
 =======
 
+*Update as of 2020: Google made major API changes, so this approach does not work anymore.*
+
 Not much to see yet, but there is some documentation_.
 
 This project is in prototyping stage, that's why there is no install 
